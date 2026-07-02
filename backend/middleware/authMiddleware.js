@@ -16,13 +16,20 @@ const protect = async (req,res,next)=>{
                 process.env.JWT_SECRET
             );
 
-            req.user = await User.findById(decoded.id)
-                .select("-password");
+            const authenticatedUser = await User.findById(decoded.id)
+                .select("-password +authVersion");
+            req.user = authenticatedUser;
             if(!req.user){
                 return res.status(401).json({
                 message:"User not found"
                 });
             }
+            if ((authenticatedUser.authVersion || 0) !== (decoded.version || 0)) {
+                return res.status(401).json({
+                    message:"Password changed. Please sign in again"
+                });
+            }
+            req.user.authVersion = undefined;
             next();
 
         }catch(error){

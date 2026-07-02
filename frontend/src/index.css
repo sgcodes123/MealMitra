@@ -7,6 +7,12 @@ body {
   background: #f8fafc;
   color: #1e293b;
   font-family: "Inter", "Segoe UI", sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html.dark body {
+  background: #0f1a18;
+  color: #e2e8f0;
 }
 
 * {
