@@ -7,6 +7,7 @@ const authRoutes = require("./routes/authRoutes");
 const tiffinPlanRoutes = require("./routes/tiffinPlanRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const chatbotRoutes = require("./routes/chatbotRoutes");
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 connectDB();
@@ -19,6 +20,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/plans", tiffinPlanRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 app.get("/", (req, res) => {
     res.send("MealMitra API running");
