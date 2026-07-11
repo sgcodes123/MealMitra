@@ -16,7 +16,11 @@ backend/dist/
 
 # VS Code
 .vscode/
-
+*.csv
 # OS files
 .DS_Store
 Thumbs.db
+# Added by ggshield
+.cache_ggshield
+backend/.env
+.env

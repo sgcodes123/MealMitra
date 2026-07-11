@@ -24,6 +24,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import ChatWidget from "./components/chat/ChatWidget";
 import ChatErrorBoundary from "./components/chat/ChatErrorBoundary";
+import ToastContainer from "./components/ToastContainer";
 
 function getCurrentUser() {
     try {
@@ -105,6 +106,8 @@ function AppLayout() {
                     <ChatWidget />
                 </ChatErrorBoundary>
             )}
+
+            <ToastContainer />
         </div>
     );
 }

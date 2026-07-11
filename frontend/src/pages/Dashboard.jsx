@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import OrderTracker from "../components/OrderTracker";
+import { STATUS_STEPS } from "../constants/orderStatus";
 import api from "../services/api";
 import Spinner from "../components/Spinner";
+import { getSocket } from "../services/socket";
+import { useToast } from "../context/useToast";
+
+const statusLabel = (key) => STATUS_STEPS.find((s) => s.key === key)?.label || key;
+
 const statusStyles = {
     Delivered:      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
     Cancelled:      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
@@ -11,12 +17,64 @@ const statusStyles = {
     Placed:         "bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-300",
 };
 
+function orderCardMatchesSearch(order, search) {
+    const query = search.trim().toLowerCase();
+    if (!query) return true;
+
+    return [
+        order.planId?.title,
+        order.planId?.mealType,
+        order.planId?.duration,
+        order.orderStatus,
+        order.paymentStatus,
+    ].some((value) => String(value || "").toLowerCase().includes(query));
+}
+
+function SearchIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+            aria-hidden="true"
+        >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+        </svg>
+    );
+}
+
+function SearchInput({ value, onChange, label, placeholder }) {
+    return (
+        <div className="relative w-full sm:max-w-xs">
+            <label className="sr-only">{label}</label>
+            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-slate-400 dark:text-slate-500">
+                <SearchIcon />
+            </span>
+            <input
+                type="search"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                className="h-11 w-full rounded-xl border border-emerald-900/10 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none transition-colors duration-200 placeholder:text-slate-400 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 dark:border-white/10 dark:bg-[#1a2e2b] dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-emerald-500 dark:focus:ring-emerald-500/10"
+            />
+        </div>
+    );
+}
+
 function Dashboard() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [activeSearch, setActiveSearch] = useState("");
+    const [historySearch, setHistorySearch] = useState("");
     const location = useLocation();
     const user = JSON.parse(localStorage.getItem("user") || "null");
+    const { toast } = useToast();
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -35,6 +93,50 @@ function Dashboard() {
     const activeOrders  = orders.filter((o) => !["Delivered", "Cancelled"].includes(o.orderStatus));
     const orderHistory  = orders.filter((o) =>  ["Delivered", "Cancelled"].includes(o.orderStatus));
 
+    const activeOrderIds = activeOrders.map((o) => o._id).join(",");
+    useEffect(() => {
+        if (!activeOrderIds) return;
+        const socket = getSocket();
+
+        const joinRooms = () => {
+            activeOrderIds.split(",").forEach((id) => socket.emit("joinOrder", id));
+        };
+
+        const handleOrderUpdated = ({ orderId, status, updatedAt }) => {
+            setOrders((prev) => {
+                const target = prev.find((o) => o._id === orderId);
+                if (target && target.orderStatus !== status) {
+                    toast.success(`Your order is now ${statusLabel(status)}!`);
+                }
+                return prev.map((o) =>
+                    o._id === orderId ? { ...o, orderStatus: status, updatedAt } : o
+                );
+            });
+        };
+
+        
+        socket.on("connect", joinRooms);
+        socket.on("orderUpdated", handleOrderUpdated);
+        if (socket.connected) joinRooms();
+        else socket.connect();
+
+        return () => {
+            socket.off("connect", joinRooms);
+            socket.off("orderUpdated", handleOrderUpdated);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeOrderIds]);
+
+    const filteredActiveOrders = useMemo(
+        () => activeOrders.filter((order) => orderCardMatchesSearch(order, activeSearch)),
+        [activeOrders, activeSearch]
+    );
+
+    const filteredOrderHistory = useMemo(
+        () => orderHistory.filter((order) => orderCardMatchesSearch(order, historySearch)),
+        [orderHistory, historySearch]
+    );
+
     const OrderCard = ({ order }) => (
         <article className="rounded-2xl border border-emerald-900/10 bg-white p-6 shadow-[0_12px_35px_rgba(32,75,67,0.06)] dark:bg-[#1a2e2b] dark:border-white/10 dark:shadow-none">
             <div className="flex items-start justify-between gap-4">
@@ -49,7 +151,7 @@ function Dashboard() {
                         {order.planId?.duration || "—"} subscription
                     </p>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[order.orderStatus] || statusStyles.Placed}`}>
+                <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[order.orderStatus] || statusStyles.Placed}`}>
                     {order.orderStatus === "OutForDelivery" ? "Out for delivery" : order.orderStatus}
                 </span>
             </div>
@@ -71,7 +173,7 @@ function Dashboard() {
 
             {!["Delivered", "Cancelled"].includes(order.orderStatus) && (
                 <div className="mt-5 border-t border-emerald-900/10 pt-5 dark:border-white/10">
-                    <OrderTracker order={order} />
+                    <OrderTracker order={order} compact />
                 </div>
             )}
 
@@ -134,43 +236,59 @@ function Dashboard() {
                             </Link>
                         </div>
                     ) : (
-                        <div className="space-y-12">
+                        <div className="themed-scrollbar flex max-h-[calc(100vh-220px)] flex-col gap-12 overflow-y-auto pr-2">
                             {/* Active orders */}
                             <div>
-                                <div className="mb-5 flex items-end justify-between border-b border-emerald-900/15 pb-4 dark:border-white/10">
+                                <div className="mb-5 flex flex-col gap-4 border-b border-emerald-900/15 pb-4 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">Active subscriptions</p>
                                         <h2 className="mt-2 text-2xl font-semibold text-[#173f3b] dark:text-emerald-100">Active orders</h2>
                                     </div>
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">{activeOrders.length} ongoing</span>
+                                    <div className="flex items-center gap-3 sm:items-end sm:gap-4">
+                                        <SearchInput
+                                            value={activeSearch}
+                                            onChange={setActiveSearch}
+                                            label="Search active orders"
+                                            placeholder="Search meal, duration or status..."
+                                        />
+                                        <span className="shrink-0 text-sm text-slate-500 dark:text-slate-400">{filteredActiveOrders.length} ongoing</span>
+                                    </div>
                                 </div>
-                                {activeOrders.length ? (
-                                    <div className="grid gap-5 sm:grid-cols-2">
-                                        {activeOrders.map((order) => <OrderCard key={order._id} order={order} />)}
+                                {filteredActiveOrders.length ? (
+                                    <div className="grid items-stretch gap-5 sm:grid-cols-2">
+                                        {filteredActiveOrders.map((order) => <OrderCard key={order._id} order={order} />)}
                                     </div>
                                 ) : (
                                     <p className="rounded-2xl border border-dashed border-emerald-900/15 bg-white/60 p-7 text-sm text-slate-500 dark:bg-white/5 dark:border-white/10 dark:text-slate-400">
-                                        No active orders right now.
+                                        {activeSearch ? "No active orders match your search." : "No active orders right now."}
                                     </p>
                                 )}
                             </div>
 
-                            {/* Order history */}
+                          
                             <div>
-                                <div className="mb-5 flex items-end justify-between border-b border-emerald-900/15 pb-4 dark:border-white/10">
+                                <div className="mb-5 flex flex-col gap-4 border-b border-emerald-900/15 pb-4 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">Past activity</p>
                                         <h2 className="mt-2 text-2xl font-semibold text-[#173f3b] dark:text-emerald-100">Order history</h2>
                                     </div>
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">{orderHistory.length} archived</span>
+                                    <div className="flex items-center gap-3 sm:items-end sm:gap-4">
+                                        <SearchInput
+                                            value={historySearch}
+                                            onChange={setHistorySearch}
+                                            label="Search order history"
+                                            placeholder="Search meal, duration or status..."
+                                        />
+                                        <span className="shrink-0 text-sm text-slate-500 dark:text-slate-400">{filteredOrderHistory.length} archived</span>
+                                    </div>
                                 </div>
-                                {orderHistory.length ? (
-                                    <div className="grid gap-5 sm:grid-cols-2">
-                                        {orderHistory.map((order) => <OrderCard key={order._id} order={order} />)}
+                                {filteredOrderHistory.length ? (
+                                    <div className="grid items-stretch gap-5 sm:grid-cols-2">
+                                        {filteredOrderHistory.map((order) => <OrderCard key={order._id} order={order} />)}
                                     </div>
                                 ) : (
                                     <p className="rounded-2xl border border-dashed border-emerald-900/15 bg-white/60 p-7 text-sm text-slate-500 dark:bg-white/5 dark:border-white/10 dark:text-slate-400">
-                                        Completed and cancelled orders will appear here.
+                                        {historySearch ? "No past orders match your search." : "Completed and cancelled orders will appear here."}
                                     </p>
                                 )}
                             </div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import Spinner from "../components/Spinner";
+import { useToast } from "../context/useToast";
 
 const emptyPlan = {
     title: "",
@@ -281,6 +282,7 @@ function OrderSection({
 }
 
 function AdminDashboard() {
+    const { toast } = useToast();
     const [orders, setOrders] = useState([]);
     const [plans, setPlans] = useState([]);
     const [planForm, setPlanForm] = useState(emptyPlan);
@@ -379,6 +381,7 @@ function AdminDashboard() {
                 ...current,
                 [id]: { saving: false, error: "" },
             }));
+            toast.success(`Order marked as ${orderStatus}.`);
         } catch (error) {
             setRowState((current) => ({
                 ...current,
@@ -422,6 +425,7 @@ function AdminDashboard() {
             await loadPlans();
             setPlanForm(emptyPlan);
             setEditingId(null);
+            toast.success(editingId ? "Plan updated." : "Plan created.");
         } catch (error) {
             setPageError(
                 error.response?.data?.message ||
@@ -467,6 +471,7 @@ function AdminDashboard() {
             setPlans((current) =>
                 current.filter((item) => item._id !== plan._id)
             );
+            toast.success("Plan deleted.");
 
             if (editingId === plan._id) {
                 cancelEdit();

@@ -22,6 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.csv
 backend/.env
 frontend/.env
 rzp-test-key.csv

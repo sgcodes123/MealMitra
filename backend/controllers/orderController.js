@@ -1,6 +1,7 @@
 const Order = require("../models/Order");
 const TiffinPlan = require("../models/TiffinPlan");
 const mongoose = require("mongoose");
+const { emitOrderUpdate } = require("../socket");
 
 const validStatuses = ["Placed", "Preparing", "OutForDelivery", "Delivered", "Cancelled"];
 
@@ -78,6 +79,13 @@ const updateOrderStatus = async (req, res) => {
 
         order.orderStatus = orderStatus;
         await order.save();
+
+        // Push the change to anyone watching this order in real time.
+        emitOrderUpdate(order._id.toString(), {
+            orderId: order._id.toString(),
+            status: order.orderStatus,
+            updatedAt: order.updatedAt,
+        });
 
         res.status(200).json({ message: "Order updated successfully", order });
     } catch (error) {

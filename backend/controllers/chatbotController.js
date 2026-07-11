@@ -1,4 +1,4 @@
-const TiffinPlan = require("../models/TiffinPlan");
+const { getCachedPlans } = require("../utils/planCache");
 const { streamGemini } = require("../utils/gemini");
 const { buildSystemInstruction } = require("../utils/promptBuilder");
 const { prepareContext } = require("../utils/conversationMemory");
@@ -78,7 +78,7 @@ const chat = async (req, res) => {
     });
 
     try {
-        const plans = await TiffinPlan.find().sort({ mealType: 1, price: 1 });
+        const plans = await getCachedPlans();
 
         const { workingHistory, summary: updatedSummary } = await prepareContext(safeHistory, summary);
 

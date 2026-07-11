@@ -1,5 +1,6 @@
 const TiffinPlan = require("../models/TiffinPlan");
 const mongoose = require("mongoose");
+const { invalidatePlanCache } = require("../utils/planCache");
 
 const mealTypes = ["Breakfast", "Lunch", "Dinner"];
 const durations  = ["Daily", "Weekly", "Monthly"];
@@ -42,6 +43,7 @@ const createPlan = async (req, res) => {
             price: Number(price),
         });
 
+        invalidatePlanCache();
         res.status(201).json({ message: "Plan created successfully", plan });
     } catch (error) {
         console.error("createPlan error:", error);
@@ -79,6 +81,7 @@ const updatePlan = async (req, res) => {
 
         if (!plan) return res.status(404).json({ message: "Plan not found" });
 
+        invalidatePlanCache();
         res.status(200).json({ message: "Plan updated successfully", plan });
     } catch (error) {
         console.error("updatePlan error:", error);
@@ -94,6 +97,7 @@ const deletePlan = async (req, res) => {
         const plan = await TiffinPlan.findByIdAndDelete(req.params.id);
         if (!plan) return res.status(404).json({ message: "Plan not found" });
 
+        invalidatePlanCache();
         res.status(200).json({ message: "Plan deleted successfully" });
     } catch (error) {
         console.error("deletePlan error:", error);

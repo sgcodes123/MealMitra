@@ -123,7 +123,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Plan details */}
-                <div className="space-y-4 px-8 py-6">
+                <div className="px-8 py-6">
                     <div className="flex items-start justify-between">
                         <div>
                             <p className="mb-1 text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Plan</p>
@@ -134,12 +134,16 @@ export default function CheckoutPage() {
                         </span>
                     </div>
 
-                    <div className="space-y-3 border-t border-emerald-900/10 pt-4 dark:border-white/10">
-                        <Row label="Duration" value={plan?.duration} />
-                        <Row label="Description" value={plan?.description} />
+                    <div className="my-6 border-t border-emerald-900/10 dark:border-white/10" />
+
+                    <div className="space-y-6">
+                        <InfoRow label="Duration" value={plan?.duration} />
+                        <InfoRow label="Description" value={plan?.description} stacked />
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-emerald-900/10 pt-4 dark:border-white/10">
+                    <div className="my-6 border-t border-emerald-900/10 dark:border-white/10" />
+
+                    <div className="flex items-center justify-between">
                         <p className="text-sm text-slate-500 dark:text-slate-400">Total payable</p>
                         <p className="text-2xl font-bold text-[#173f3b] dark:text-emerald-200">₹{plan?.price}</p>
                     </div>
@@ -166,11 +170,21 @@ export default function CheckoutPage() {
     );
 }
 
-function Row({ label, value }) {
+function InfoRow({ label, value, stacked = false }) {
     return (
-        <div className="flex justify-between text-sm">
-            <span className="text-slate-400 dark:text-slate-500">{label}</span>
-            <span className="font-medium text-[#173f3b] dark:text-slate-200">{value}</span>
+        <div className={stacked ? "" : "flex items-baseline gap-3"}>
+            <span className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                {label}
+            </span>
+            <span
+                className={
+                    stacked
+                        ? "mt-3 block max-w-[85%] text-sm font-semibold leading-relaxed text-[#173f3b] dark:text-slate-200"
+                        : "text-sm font-semibold text-[#173f3b] dark:text-slate-200"
+                }
+            >
+                {value}
+            </span>
         </div>
     );
 }
