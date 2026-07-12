@@ -9,10 +9,16 @@ function Login() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const [sessionExpired, setSessionExpired] = useState(Boolean(location.state?.sessionExpired));
+    const [justRegistered, setJustRegistered] = useState(Boolean(location.state?.registered));
+    const [justResetPassword, setJustResetPassword] = useState(Boolean(location.state?.passwordReset));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setSessionExpired(false);
+        setJustRegistered(false);
+        setJustResetPassword(false);
         setLoading(true);
         try {
             const response = await api.post("/auth/login", { email, password });
@@ -32,7 +38,7 @@ function Login() {
 
     return (
         <main className="min-h-screen bg-[#f1f8f5] text-slate-800 dark:bg-[#0f1a18] dark:text-slate-100">
-        
+            {/* Hero */}
             <section className="relative overflow-hidden border-b border-emerald-900/10 bg-[#dcefeb] px-5 py-16 sm:px-8 sm:py-20 dark:bg-[#0d2420] dark:border-white/10">
                 <div className="absolute -right-24 -top-28 h-80 w-80 rounded-full border-[44px] border-white/45 dark:border-white/10" />
                 <div className="absolute bottom-8 right-[18%] h-3 w-20 rounded-full bg-[#e9827c] opacity-80" />
@@ -61,17 +67,17 @@ function Login() {
                             </h2>
                         </div>
 
-                        {location.state?.sessionExpired && (
+                        {sessionExpired && (
                             <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-900/30 dark:border-amber-700/40 dark:text-amber-300">
                                 Your session has expired. Please sign in again.
                             </div>
                         )}
-                        {location.state?.registered && (
+                        {justRegistered && (
                             <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700/40 dark:text-emerald-300">
                                 Account created successfully. Please sign in.
                             </div>
                         )}
-                        {location.state?.passwordReset && (
+                        {justResetPassword && (
                             <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700/40 dark:text-emerald-300">
                                 Password reset successfully. Please sign in with your new password.
                             </div>
