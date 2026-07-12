@@ -1,31 +1,6 @@
 import { Link } from "react-router-dom";
 import logo from "../assets/mealmitra-logo.png";
 
-/*
-  ---------------------------------------------------------------------------
-  HOW TO ADD YOUR OWN FOOD IMAGES
-  ---------------------------------------------------------------------------
-  This file uses plain <img src="..."> tags pointing at the /public folder,
-  so swapping in real photos takes 2 steps and NO code changes:
-
-  1. Drop your image files into the project's `public/images/` folder, e.g.
-        public/images/hero-thali.jpg
-        public/images/breakfast.jpg
-        public/images/lunch.jpg
-        public/images/dinner.jpg
-     (In a Vite app, anything inside `public/` is served from "/". So
-      public/images/lunch.jpg becomes the url "/images/lunch.jpg".)
-
-  2. That's it — the paths below already point there. Replace my
-     "/placeholder..." paths with your "/images/..." paths and the photos
-     show up. Keep them roughly square-ish; ~800x800 looks best in the cards
-     and ~1000x1200 (portrait) in the hero frame.
-
-  Tip: real photos of YOUR tiffins build way more trust than stock/AI images.
-  Free stock alternatives if you need them: unsplash.com, pexels.com
-  (search "indian thali", "tiffin", "dal rice").
-  ---------------------------------------------------------------------------
-*/
 
 function IconSunrise(props) {
     return (
@@ -93,6 +68,7 @@ const services = [
     },
 ];
 function Home() {
+    const isLoggedIn = !!localStorage.getItem("token");
     return (
         <main className="min-h-screen bg-[#f1f8f5] text-slate-800 dark:bg-[#0f1a18] dark:text-slate-100">
             {/* Hero */}
@@ -119,8 +95,8 @@ function Home() {
                             <Link to="/plans" className="rounded-xl bg-[#173f3b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2d2a]">
                                 View Plans
                             </Link>
-                            <Link to="/signup" className="rounded-xl border border-emerald-900/15 bg-white px-6 py-3 text-sm font-semibold text-[#173f3b] transition hover:bg-emerald-50 dark:bg-white/10 dark:border-white/15 dark:text-emerald-200 dark:hover:bg-white/20">
-                                Get Started
+                            <Link to={isLoggedIn ? "/dashboard" : "/signup"} className="rounded-xl border border-emerald-900/15 bg-white px-6 py-3 text-sm font-semibold text-[#173f3b] transition hover:bg-emerald-50 dark:bg-white/10 dark:border-white/15 dark:text-emerald-200 dark:hover:bg-white/20">
+                                {isLoggedIn ? "Go to Dashboard" : "Get Started"}
                             </Link>
                         </div>
                     </div>
@@ -190,7 +166,7 @@ function Home() {
                     </div>
                 </div>
 
-                {/* Aside — already dark bg, minor tweaks */}
+              
                 <aside className="h-fit rounded-2xl bg-[#173f3b] p-7 text-white shadow-xl shadow-emerald-950/10 lg:sticky lg:top-8 dark:bg-[#0d2420] dark:shadow-none dark:border dark:border-white/10">
                     <div className="mb-8 flex items-center justify-between">
                         <span className="h-2.5 w-2.5 rounded-full bg-[#e9827c]" />
@@ -213,8 +189,8 @@ function Home() {
                             </li>
                         ))}
                     </ul>
-                    <Link to="/signup" className="mt-8 block rounded-xl bg-white px-5 py-3.5 text-center text-sm font-semibold text-[#173f3b] transition hover:bg-emerald-50">
-                        Get Started
+                    <Link to={isLoggedIn ? "/dashboard" : "/signup"} className="mt-8 block rounded-xl bg-white px-5 py-3.5 text-center text-sm font-semibold text-[#173f3b] transition hover:bg-emerald-50">
+                        {isLoggedIn ? "Go to Dashboard" : "Get Started"}
                     </Link>
                 </aside>
             </section>
