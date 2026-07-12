@@ -3,7 +3,9 @@ import {
     Routes,
     Route,
     useLocation,
+    useNavigate,
 } from "react-router-dom";
+import { useEffect } from "react";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -36,12 +38,21 @@ function getCurrentUser() {
 
 function AppLayout() {
     const location = useLocation();
+    const navigate = useNavigate();
     const user = getCurrentUser();
 
     const isAdmin = user?.role === "admin";
     const isAdminPage = location.pathname.startsWith("/admin");
 
     const showChatbot = !isAdmin && !isAdminPage;
+
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            navigate("/login", { state: { sessionExpired: true } });
+        };
+        window.addEventListener("auth:sessionExpired", handleSessionExpired);
+        return () => window.removeEventListener("auth:sessionExpired", handleSessionExpired);
+    }, [navigate]);
 
     return (
         <div className="flex min-h-screen flex-col">

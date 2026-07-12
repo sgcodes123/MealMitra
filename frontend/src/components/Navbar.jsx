@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/mealmitra-logo.png";
 import { useTheme } from "../context/useTheme";
+import { clearSession } from "../services/session";
 
 function SunIcon() {
     return (
@@ -77,15 +78,14 @@ useEffect(() => {
     setMenuOpenRef.current(false);
 }, [location.pathname]);
 
-    // Lock body scroll while mobile menu is open
+  
     useEffect(() => {
         document.body.style.overflow = menuOpen ? "hidden" : "";
         return () => { document.body.style.overflow = ""; };
     }, [menuOpen]);
 
     const logout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        clearSession();
         setMenuOpen(false);
         navigate("/login");
     };
@@ -140,7 +140,7 @@ useEffect(() => {
                     </div>
                 </Link>
 
-                {/* Desktop nav */}
+            
                 <div className="hidden items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-300 md:flex">
                     {isAdmin ? (
                         <>
@@ -173,7 +173,7 @@ useEffect(() => {
                     )}
                 </div>
 
-                {/* Mobile: theme toggle + hamburger */}
+                
                 <div className="flex items-center gap-2 md:hidden">
                     {themeButton}
                     <button
@@ -186,8 +186,6 @@ useEffect(() => {
                     </button>
                 </div>
             </nav>
-
-            {/* Mobile drawer */}
             {menuOpen && (
                 <div className="border-t border-emerald-900/10 bg-white px-5 py-4 dark:border-white/10 dark:bg-[#0f1a18] md:hidden">
                     <div className="flex flex-col gap-4 text-sm font-medium text-slate-600 dark:text-slate-300">
