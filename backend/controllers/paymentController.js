@@ -24,6 +24,10 @@ const createRazorpayOrder = async (req, res) => {
             notes: { orderId: orderId.toString() },
         });
 
+        
+        order.razorpayOrderId = razorpayOrder.id;
+        await order.save();
+
         res.status(200).json({
             razorpayOrderId: razorpayOrder.id,
             amount: razorpayOrder.amount,
@@ -48,13 +52,21 @@ const verifyPayment = async (req, res) => {
         if (expectedSignature !== razorpay_signature)
             return res.status(400).json({ message: "Payment verification failed." });
 
-        const order = await markOrderPaid(orderId, razorpay_order_id, razorpay_payment_id);
+    
+        const order = await Order.findById(orderId);
+        if (!order) return res.status(404).json({ message: "Order not found" });
+        if (order.userId.toString() !== req.user.id)
+            return res.status(403).json({ message: "Unauthorized" });
+        if (order.razorpayOrderId !== razorpay_order_id)
+            return res.status(400).json({ message: "This payment does not match the specified order." });
 
-        sendOrderConfirmationEmail(order.userId, order).catch((err) =>
+        const updatedOrder = await markOrderPaid(orderId, razorpay_order_id, razorpay_payment_id);
+
+        sendOrderConfirmationEmail(updatedOrder.userId, updatedOrder).catch((err) =>
             console.error("Email failed (non-critical):", err.message)
         );
 
-        res.status(200).json({ message: "Payment verified", order });
+        res.status(200).json({ message: "Payment verified", order: updatedOrder });
     } catch (error) {
         console.error("verifyPayment error:", error);
         res.status(500).json({ message: "Payment verification failed. Please contact support." });

@@ -4,7 +4,7 @@ const Order = require("./models/Order");
 
 let io;
 
-// Attaches Socket.IO to the given HTTP server and wires up order-room joining.
+
 
 function initSocket(httpServer, allowedOrigins) {
     io = new Server(httpServer, {
