@@ -1,7 +1,3 @@
-// Usage:
-// import Spinner from "../components/Spinner";
-// <Spinner /> — centered full screen (default, for page loads)
-// <Spinner inline /> — small inline spinner (for buttons etc)
 
 export default function Spinner({ inline = false }) {
     if (inline) {

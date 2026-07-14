@@ -98,7 +98,6 @@ export function useChat() {
         const idx = messages.length - 1 - lastUserIndex;
         const lastUserMsg = messages[idx];
 
-        // Drop everything from the last user message onward, then re-send it.
         const historyForRequest = messages
             .slice(0, idx)
             .filter((m) => m.status !== "error" && m.id !== "welcome")
